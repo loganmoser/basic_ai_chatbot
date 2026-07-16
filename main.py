@@ -17,8 +17,8 @@ def main():
         api_key=api_key,
     )
 
-    parser = argparse.ArgumentParser(description="Chatbor")
-    parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser = argparse.ArgumentParser(description="AI Code Assistant")
+    parser.add_argument("user_prompt", type=str, help="Prompt for LLM")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
     args = parser.parse_args()
 
@@ -33,9 +33,9 @@ def main():
         }
     ]
 
-    generate_content(client, messages, args)
+    generate_content(client, messages, args.verbose)
 
-def generate_content(client: OpenAI, messages: list, args: dict) -> None: 
+def generate_content(client: OpenAI, messages: list, verbose: bool) -> None: 
     response = client.chat.completions.create(
         model="openrouter/free",
         messages=messages,
@@ -43,8 +43,7 @@ def generate_content(client: OpenAI, messages: list, args: dict) -> None:
         tools = available_functions,
     )
 
-    if args.verbose:
-        print(f"User prompt:{args.user_prompt}")
+    if verbose:
         if response.usage is not None:
             print(f"Prompt tokens: {response.usage.prompt_tokens}")
             print(f"Response tokens: {response.usage.completion_tokens}")
@@ -57,10 +56,10 @@ def generate_content(client: OpenAI, messages: list, args: dict) -> None:
         for tool_call in message.tool_calls:
             function_args = json.loads(tool_call.function.arguments or "{}")
             function_name = tool_call.function.name
-            result_message = call_function(tool_call)
+            result_message = call_function(tool_call, verbose)
             if not result_message['content']:
                 raise Exception("Tool call should have a non-empty content")
-            if args.verbose:
+            if verbose:
                 print(f"-> {result_message['content']}")
     else:
         response_text = message.content

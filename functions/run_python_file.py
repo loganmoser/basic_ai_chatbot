@@ -32,7 +32,7 @@ def run_python_file(working_directory: str, file_path: str, args: list[str] | No
         output: list[str] = []
         if process.returncode != 0:
             output.append(f"Process exited with code {process.returncode}")
-        if not process.stdout and not result.stderr:
+        if not process.stdout and not process.stderr:
             output.append("No output produced")
         if process.stdout:
             output.append(f"STDOUT:\n{process.stdout}")
@@ -49,7 +49,7 @@ schema_run_python_file = {
     "type": "function",
     "function": {
         "name": "run_python_file",
-        "description": "Run a given python file with optional parameters",
+        "description": "Run or execute a python file",
         "parameters": {
             "required": ["file_path"],
             "type": "object",
