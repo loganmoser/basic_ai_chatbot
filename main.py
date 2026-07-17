@@ -5,6 +5,7 @@ import argparse
 from prompts import system_prompt
 from call_function import available_functions, call_function
 import json
+import sys
 
 def main():
     load_dotenv()
@@ -33,9 +34,19 @@ def main():
         }
     ]
 
-    generate_content(client, messages, args.verbose)
+    for _ in range(20):
+        response_text = generate_content(client, messages, args.verbose)
+        if response_text:
+            print(response_text)
+            break
 
-def generate_content(client: OpenAI, messages: list, verbose: bool) -> None: 
+    if response_text is None:
+        sys.exit(1)
+
+
+def generate_content(client: OpenAI, messages: list, verbose: bool) -> None | str: 
+
+    # Call model, handle respones, iterate until task is solved    
     response = client.chat.completions.create(
         model="openrouter/free",
         messages=messages,
@@ -52,6 +63,8 @@ def generate_content(client: OpenAI, messages: list, verbose: bool) -> None:
 
     message = response.choices[0].message
 
+    messages.append(message)
+
     if message.tool_calls:
         for tool_call in message.tool_calls:
             function_args = json.loads(tool_call.function.arguments or "{}")
@@ -61,9 +74,10 @@ def generate_content(client: OpenAI, messages: list, verbose: bool) -> None:
                 raise Exception("Tool call should have a non-empty content")
             if verbose:
                 print(f"-> {result_message['content']}")
+            messages.append(result_message)
     else:
         response_text = message.content
-        print(response_text)
+        return response_text # Break out to main if no more tool calls are made by the model
 
 
 if __name__ == "__main__":
